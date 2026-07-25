@@ -43,7 +43,6 @@ const router = createBrowserRouter([
     ],
     errorElement: <ErrorPage />,
   },
-  // About page is outside MainLayout so it renders full-screen (globe)
 ]);
 
 export default function App() {

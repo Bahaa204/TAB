@@ -54,6 +54,7 @@ import ErrorCard from "@/components/ErrorCard";
 
 import { useFavorites } from "@/hooks/useFavorites";
 import { useTourBookings } from "@/hooks/useTourBookings";
+import { useDisplay3DModelsContext } from "@/context/Display3DModelsContext";
 
 const MODELS = [
   "models/simple_low_poly_abandoned_brick_building.glb",
@@ -246,6 +247,8 @@ export default function ProjectDetails() {
     Error: HousesError,
     UpdateHouse,
   } = useHouses();
+
+  const { Display3DModels } = useDisplay3DModelsContext();
 
   const loading =
     CountriesLoading || ProjectsLoading || BuildingsLoading || HousesLoading;
@@ -796,51 +799,63 @@ export default function ProjectDetails() {
         )}
 
         <div className='bg-white rounded-2xl shadow-lg p-8 mb-20'>
-          <h2 className='text-2xl font-bold mb-4'>Project 3D Previews</h2>
-          <div
-            className={`grid gap-6 ${isSingleBuildingProject ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}
-          >
-            {projectBuildings.map((building, index) => {
-              const modelPath =
-                modelAssignments[index] ?? MODELS[index % MODELS.length];
-              return (
-                <div key={building.id} className='bg-gray-50 rounded-2xl p-4'>
-                  <h3 className='text-lg font-semibold mb-2'>
-                    {building.name}
-                  </h3>
-                  <LazyModelPreview
-                    className={`relative overflow-hidden rounded-2xl ${isSingleBuildingProject ? "h-175" : "h-64"}`}
-                  >
-                    <Canvas camera={{ position: [0, 1.8, 7], fov: 42 }} shadows>
-                      <color attach='background' args={["#f8fbfd"]} />
-                      <ambientLight intensity={0.8} />
-                      <spotLight
-                        position={[10, 10, 10]}
-                        angle={0.15}
-                        penumbra={1}
-                        intensity={1}
-                        castShadow
-                      />
-
-                      <Suspense fallback={<Loader />}>
-                        <Environment preset='city' />
-                        <Model modelPath={modelPath} />
-                        <ContactShadows
-                          position={[0, -1, 0]}
-                          opacity={0.4}
-                          scale={20}
-                          blur={2.5}
-                          far={4.5}
+          <h2 className='text-2xl font-bold'>Project 3D Previews</h2>
+          <h3 className='text-lg font-semibold mb-4 bg-yellow-200/20 text-yellow-800 p-2 rounded'>
+            ⚠️WARNING: The 3D Previews are still work in progress and may lag
+            your device. These models are for demonstration purposes only and
+            doesnt not reflect real buildings or projects.
+          </h3>
+          {Display3DModels ? (
+            <div
+              className={`grid gap-6 ${isSingleBuildingProject ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}
+            >
+              {projectBuildings.map((building, index) => {
+                const modelPath =
+                  modelAssignments[index] ?? MODELS[index % MODELS.length];
+                return (
+                  <div key={building.id} className='bg-gray-50 rounded-2xl p-4'>
+                    <h3 className='text-lg font-semibold mb-2'>
+                      {building.name}
+                    </h3>
+                    <LazyModelPreview
+                      className={`relative overflow-hidden rounded-2xl ${isSingleBuildingProject ? "h-175" : "h-64"}`}
+                    >
+                      <Canvas
+                        camera={{ position: [0, 1.8, 7], fov: 42 }}
+                        shadows
+                      >
+                        <color attach='background' args={["#f8fbfd"]} />
+                        <ambientLight intensity={0.8} />
+                        <spotLight
+                          position={[10, 10, 10]}
+                          angle={0.15}
+                          penumbra={1}
+                          intensity={1}
+                          castShadow
                         />
-                      </Suspense>
 
-                      <SceneControls />
-                    </Canvas>
-                  </LazyModelPreview>
-                </div>
-              );
-            })}
-          </div>
+                        <Suspense fallback={<Loader />}>
+                          <Environment preset='city' />
+                          <Model modelPath={modelPath} />
+                          <ContactShadows
+                            position={[0, -1, 0]}
+                            opacity={0.4}
+                            scale={20}
+                            blur={2.5}
+                            far={4.5}
+                          />
+                        </Suspense>
+
+                        <SceneControls />
+                      </Canvas>
+                    </LazyModelPreview>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div>3D Previews are disabled. Please make sure that you enable them from the dropdown menu.</div>
+          )}
         </div>
 
         <div className='mb-20 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg'>
@@ -901,8 +916,7 @@ export default function ProjectDetails() {
                     step='0.1'
                     value={annualRateInput}
                     onChange={(event) => setAnnualRateInput(event.target.value)}
-                    className='w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-base text-slate-800 shadow-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:cursorq
-                    npm add-not-allowed'
+                    className='w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-base text-slate-800 shadow-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:cursor-not-allowed'
                     disabled
                   />
                 </div>
