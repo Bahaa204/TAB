@@ -31,17 +31,17 @@ export type Functions = {
   UpdateProject: (
     updated_project: Project,
     projectId: Project["id"],
-  ) => Promise<boolean>;
+  ) => Promise<Project | null>;
   RemoveProject: (projectId: Project["id"]) => Promise<boolean>;
   UpdateBuilding: (
     updated_building: Building,
     buildingId: Building["id"],
-  ) => Promise<boolean>;
+  ) => Promise<Building | null>;
   RemoveBuilding: (buildingId: Building["id"]) => Promise<boolean>;
   UpdateHouse: (
     updated_house: Partial<House>,
     houseId: House["id"],
-  ) => Promise<boolean>;
+  ) => Promise<House | null>;
   RemoveHouse: (houseId: House["id"]) => Promise<boolean>;
 };
 
@@ -109,7 +109,7 @@ export type ProjectsTableProps = {
   EditProject: (
     updated_project: Project,
     projectId: Project["id"],
-  ) => Promise<boolean>;
+  ) => Promise<Project | null>;
 };
 
 export type ProjectFormValues = { images: FileList | null } & Pick<

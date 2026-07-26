@@ -39,7 +39,7 @@ type BuildingsTableProps = {
   EditBuilding: (
     updated_building: Building,
     buildingId: Building["id"],
-  ) => Promise<boolean>;
+  ) => Promise<Building | null>;
 };
 
 type BuildingFormValues = {

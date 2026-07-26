@@ -37,7 +37,7 @@ type HousesTableProps = {
   EditHouse: (
     updated_house: Partial<House>,
     houseId: House["id"],
-  ) => Promise<boolean>;
+  ) => Promise<House | null>;
 };
 
 type HouseFormValues = Pick<

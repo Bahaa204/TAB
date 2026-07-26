@@ -42,7 +42,7 @@ export default function Favorites() {
     return (
       <ErrorCard
         message="We could not load your favorites. Please try again later."
-        error={AuthError || ProjectsError || FavoritesError}
+        error={AuthError || ProjectsError?.message || FavoritesError}
       />
     );
   }
@@ -70,7 +70,7 @@ export default function Favorites() {
     );
   }
 
-  const favoriteProjects = Projects.filter(
+  const favoriteProjects = Projects?.filter(
     (project) =>
       typeof project.id === "number" && FavoriteProjectIds.includes(project.id),
   );
@@ -88,7 +88,7 @@ export default function Favorites() {
           </CardHeader>
         </Card>
 
-        {favoriteProjects.length === 0 ? (
+        {favoriteProjects?.length === 0 ? (
           <Card className="border border-[#c8b9a7] bg-white text-[#0f2f4f] shadow-lg">
             <CardContent className="p-8 text-center text-[#24507f]">
               You have not saved any projects yet.
@@ -96,7 +96,7 @@ export default function Favorites() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {favoriteProjects.map((project) => (
+            {favoriteProjects?.map((project) => (
               <Card
                 key={project.id}
                 className="border border-[#c8b9a7] bg-white text-[#0f2f4f] shadow-sm"

@@ -63,7 +63,7 @@ export default function Finances() {
   } = useEmployees();
 
   const loading = EmployeesLoading || HousesLoading || AuthLoading;
-  const error = EmployeesError || HousesError || AuthError;
+  const error = EmployeesError || HousesError?.message || AuthError;
 
   if (error) {
     return (

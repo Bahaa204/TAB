@@ -46,9 +46,9 @@ type ProjectsDashBoardFormProps = {
   Projects: Project[];
   Buildings: Building[];
   loading: boolean;
-  AddProject: (new_project: Project) => Promise<boolean>;
-  AddBuilding: (new_building: Building) => Promise<boolean>;
-  AddHouse: (new_house: House) => Promise<boolean>;
+  AddProject: (new_project: Project) => Promise<Project | null>;
+  AddBuilding: (new_building: Building) => Promise<Building | null>;
+  AddHouse: (new_house: House) => Promise<House | null>;
 };
 
 export default function ProjectsDashBoardForm({

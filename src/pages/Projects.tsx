@@ -451,9 +451,6 @@ export default function Projects() {
     setShowSurvey(false);
   }
 
-  if (!countries || !projects || !Buildings || !Houses)
-    return <ErrorCard message='Failed go load the data required.' error='' />;
-
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -566,7 +563,7 @@ export default function Projects() {
           >
             All
           </button>
-          {countries.map((c) => (
+          {countries?.map((c) => (
             <button
               key={c.id}
               onClick={() => handleFilter(String(c.id))}
@@ -627,11 +624,11 @@ export default function Projects() {
               </div>
             ))}
           </div>
-        ) : projects.length === 0 ? (
+        ) : projects?.length === 0 ? (
           <p className='text-center text-gray-400 py-20'>No projects found.</p>
         ) : (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-20'>
-            {projects.map((project, i) => {
+            {projects?.map((project, i) => {
               const projectImages = projectImagesById.get(project.id) ?? [];
 
               return (
@@ -816,7 +813,7 @@ export default function Projects() {
                       <SelectContent className='z-9001'>
                         <SelectGroup>
                           <SelectLabel>Select Your Country</SelectLabel>
-                          {countries.map((country) => (
+                          {countries?.map((country) => (
                             <SelectItem
                               key={country.id}
                               value={String(country.id!)}
@@ -932,7 +929,7 @@ export default function Projects() {
                   <CardDescription className='text-slate-600 mt-2'>
                     Country:
                     {activeCountryId
-                      ? countries.find(
+                      ? countries?.find(
                           (item) => String(item.id) === activeCountryId,
                         )?.name
                       : "Any"}
