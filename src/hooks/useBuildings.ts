@@ -1,86 +1,39 @@
 import { useEffect, useState } from "react";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { supabaseClient } from "../lib/supabaseClient";
-import type { Data } from "../types/types";
 import type { Building } from "@/types/building";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  addBuilding,
+  fetchBuildings,
+  removeBuilding,
+  updateBuilding,
+} from "@/services/buildingservice";
 
-/**
- * Custom hook to manage buildings data and operations.
- * @returns An object containing the list of buildings, loading state, error message, and functions to manage buildings
- */
 export function useBuildings() {
-  const [Buildings, setBuildings] = useState<Building[]>([]);
-  const [Loading, setLoading] = useState<boolean>(true);
-  const [Error, setError] = useState<string>("");
+  const [Loading, setLoading] = useState<boolean>(false);
+  const [Error, setError] = useState<PostgrestError | null>(null);
 
-  // Helper Function to reset the states
-  function resetStates() {
-    setLoading(true);
-    setError("");
-  }
+  const queryClient = useQueryClient();
 
-  // Helper function to set the error message
-  function SetError(error: PostgrestError) {
-    const msg: string = `An Error has occurred. Error Message: ${error.message}`;
-    console.error(error);
-    setError(msg);
-    setLoading(false);
-  }
+  const {
+    data: Buildings,
+    isLoading,
+    error: FetchError,
+  } = useQuery<Building[], PostgrestError>({
+    queryKey: ["buildings"],
+    queryFn: fetchBuildings,
+  });
 
-  // Fetching the data from the database + real time listeners to update the data
   useEffect(() => {
-    async function fetchBuildings() {
-      resetStates();
-
-      const { data, error: FetchError } = (await supabaseClient
-        .from("buildings")
-        .select("*")) as Data<Building[]>;
-
-      if (FetchError) {
-        SetError(FetchError);
-        return;
-      }
-
-      setBuildings(data || []);
-      setLoading(false);
-    }
-
-    fetchBuildings();
-
     const channel = supabaseClient.channel("Buildings-Channel");
 
     channel
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "buildings" },
-        (payload) => {
-          const newBuilding = payload.new as Building;
-
-          setBuildings((prev) => [...prev, newBuilding]);
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "buildings" },
-        (payload) => {
-          const updatedBuilding = payload.new as Building;
-
-          setBuildings((prev) =>
-            prev.map((building) =>
-              building.id === updatedBuilding.id ? updatedBuilding : building,
-            ),
-          );
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "buildings" },
-        (payload) => {
-          const deletedBuilding = payload.old as Building;
-
-          setBuildings((prev) =>
-            prev.filter((building) => building.id !== deletedBuilding.id),
-          );
+        { event: "*", schema: "public", table: "buildings" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["buildings"] });
         },
       )
       .subscribe((status) => {
@@ -92,80 +45,80 @@ export function useBuildings() {
     };
   }, []);
 
-  /**
-   * Adds a new building to the database.
-   * @param new_building - The new building to be added to the database.
-   * @returns A promise resolving to a boolean.
-   */
+  const AddMutation = useMutation<Building, PostgrestError, Building>({
+    mutationFn: addBuilding,
+    onMutate: () => setLoading(true),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      setLoading(false);
+    },
+    onError: (error) => {
+      setError(error);
+      setLoading(false);
+    },
+  });
+
+  const UpdateMutation = useMutation<
+    Building,
+    PostgrestError,
+    { buildingId: Building["id"]; updated_building: Partial<Building> }
+  >({
+    mutationFn: updateBuilding,
+    onMutate: () => setLoading(true),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      setLoading(false);
+    },
+    onError: (error) => {
+      setError(error);
+      setLoading(false);
+    },
+  });
+
+  const RemoveMutation = useMutation<boolean, PostgrestError, Building["id"]>({
+    mutationFn: removeBuilding,
+    onMutate: () => setLoading(true),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      setLoading(false);
+    },
+    onError: (error) => {
+      setError(error);
+      setLoading(false);
+    },
+  });
+
   async function AddBuilding(new_building: Building) {
-    resetStates();
+    const { data, mutateAsync, isSuccess } = AddMutation;
 
-    const { error: InsertError } = await supabaseClient
-      .from("buildings")
-      .insert(new_building)
-      .single();
+    await mutateAsync(new_building);
 
-    if (InsertError) {
-      SetError(InsertError);
-      return false;
-    }
-
-    setLoading(false);
-    return true;
+    return isSuccess ? data : null;
   }
 
-  /**
-   * Updates an existing building in the database.
-   * @param updated_building - The updated building data to be saved in the database.
-   * @param buildingId - The ID of the building to be updated.
-   * @returns A promise resolving to a boolean.
-   */
   async function UpdateBuilding(
     updated_building: Building,
     buildingId: Building["id"],
   ) {
-    resetStates();
+    const { data, mutateAsync, isSuccess } = UpdateMutation;
 
-    const { error: UpdateError } = await supabaseClient
-      .from("buildings")
-      .update(updated_building)
-      .eq("id", buildingId);
+    await mutateAsync({ updated_building, buildingId });
 
-    if (UpdateError) {
-      SetError(UpdateError);
-      return false;
-    }
-
-    setLoading(false);
-    return true;
+    return isSuccess ? data : null;
   }
 
-  /**
-   * Removes a building from the database.
-   * @param buildingId - The ID of the building to be removed from the database.
-   * @returns A promise resolving to a boolean.
-   */
   async function RemoveBuilding(buildingId: Building["id"]) {
-    resetStates();
+    const { mutateAsync, isSuccess } = RemoveMutation;
 
-    const { error: DeleteError } = await supabaseClient
-      .from("buildings")
-      .delete()
-      .eq("id", buildingId);
+    await mutateAsync(buildingId);
 
-    if (DeleteError) {
-      SetError(DeleteError);
-      return false;
-    }
-
-    setLoading(false);
-    return true;
+    return isSuccess;
   }
 
   return {
     Buildings,
-    Loading,
-    Error,
+    Loading: isLoading || Loading,
+    Error: FetchError || Error,
     AddBuilding,
     UpdateBuilding,
     RemoveBuilding,

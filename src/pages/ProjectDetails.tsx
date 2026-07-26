@@ -256,13 +256,13 @@ export default function ProjectDetails() {
   const error =
     CountriesError || ProjectsError || BuildingsError || HousesError;
 
-  const countries = Countries as Country[];
+  const countries = (Countries || []) as Country[];
 
   const projectIdAsNumber = Number(projectID);
 
   const project = useMemo(
     () =>
-      Projects.find(
+      Projects?.find(
         (item): item is Project & { id: number } =>
           typeof item.id === "number" && item.id === projectIdAsNumber,
       ) || null,
@@ -286,8 +286,9 @@ export default function ProjectDetails() {
 
   const housesByBuildingId = useMemo(() => {
     const map = new Map<number, House[]>();
+    if (!Houses) return map;
 
-    Houses.forEach((house) => {
+  Houses.forEach((house) => {
       if (
         typeof house.id !== "number" ||
         typeof house.building_id !== "number"
@@ -313,7 +314,7 @@ export default function ProjectDetails() {
   }, [Houses]);
 
   const projectBuildings = useMemo<BuildingWithHouses[]>(() => {
-    if (!project || typeof project.id !== "number") return [];
+    if (!project || !Buildings || typeof project.id !== "number") return [];
 
     return Buildings.filter(
       (building): building is Building & { id: number; project_id: number } =>
@@ -335,11 +336,11 @@ export default function ProjectDetails() {
   const projectHeroImageById = useMemo(() => {
     const map = new Map<number, string>();
 
-    const sortedProjects = Projects.filter(
+    const sortedProjects = Projects?.filter(
       (item): item is Project & { id: number } => typeof item.id === "number",
     ).sort((a, b) => a.id - b.id);
 
-    sortedProjects.forEach((item, index) => {
+    sortedProjects?.forEach((item, index) => {
       const image = PROJECT_HERO_IMAGES[index];
       if (image) {
         map.set(item.id, image);
@@ -465,7 +466,7 @@ export default function ProjectDetails() {
     return (
       <ErrorCard
         message='We could not load Project Details. Please try again later.'
-        error={error}
+        error={error.message}
       />
     );
   }

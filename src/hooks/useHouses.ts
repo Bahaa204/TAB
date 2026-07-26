@@ -5,86 +5,38 @@ import { supabaseClient } from "../lib/supabaseClient";
 import { GetMinMaxDate } from "../helpers/Date";
 import type { DateReturn, DateString } from "../types/date";
 import type { House } from "@/types/house";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  addHouse,
+  fetchHouses,
+  removeHouse,
+  updateHouse,
+} from "@/services/houseservice";
 
-/**
- *
- * This hook manages the state and operations related to houses.
- * @returns An object containing the list of houses, loading state, error message, and functions to manage houses
- *
- */
 export function useHouses() {
-  const [Houses, setHouses] = useState<House[]>([]);
-  const [Loading, setLoading] = useState<boolean>(true);
-  const [Error, setError] = useState<string>("");
+  const [Loading, setLoading] = useState<boolean>(false);
+  const [Error, setError] = useState<PostgrestError | null>(null);
 
-  // Helper Function to reset the states
-  function resetStates() {
-    setLoading(true);
-    setError("");
-  }
+  const queryClient = useQueryClient();
 
-  // Helper function to set the error message
-  function SetError(error: PostgrestError) {
-    const msg: string = `An Error has occurred. Error Message: ${error.message}`;
-    console.error(error);
-    setError(msg);
-    setLoading(false);
-  }
+  const {
+    data: Houses,
+    isLoading,
+    error: FetchError,
+  } = useQuery<House[], PostgrestError>({
+    queryKey: ["houses"],
+    queryFn: fetchHouses,
+  });
 
-  // Fetching the data from the database + real time listeners to update the data
   useEffect(() => {
-    async function fetchHouses() {
-      resetStates();
-
-      const { data, error: FetchError } = (await supabaseClient
-        .from("houses")
-        .select("*")) as Data<House[]>;
-
-      if (FetchError) {
-        SetError(FetchError);
-        return;
-      }
-
-      setHouses(data || []);
-      setLoading(false);
-    }
-
-    fetchHouses();
-
     const channel = supabaseClient.channel("Houses-Channel");
 
     channel
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "houses" },
-        (payload) => {
-          const newHouse = payload.new as House;
-
-          setHouses((prev) => [...prev, newHouse]);
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "houses" },
-        (payload) => {
-          const updatedHouses = payload.new as House;
-
-          setHouses((prev) =>
-            prev.map((house) =>
-              house.id === updatedHouses.id ? updatedHouses : house,
-            ),
-          );
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "houses" },
-        (payload) => {
-          const deletedHouse = payload.old as House;
-
-          setHouses((prev) =>
-            prev.filter((house) => house.id !== deletedHouse.id),
-          );
+        { event: "*", schema: "public", table: "houses" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["houses"] });
         },
       )
       .subscribe((status) => {
@@ -96,68 +48,74 @@ export function useHouses() {
     };
   }, []);
 
-  /**
-   * Adds a new house to the database.
-   * @param new_house - The new house to be added to the database. It should be an object of type House containing the necessary fields.
-   * @returns A promise resolving to a boolean.
-   */
+  const AddMutation = useMutation<House, PostgrestError, House>({
+    mutationFn: addHouse,
+    onMutate: () => setLoading(true),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["houses"] });
+      setLoading(false);
+    },
+    onError: (error) => {
+      setError(error);
+      setLoading(false);
+    },
+  });
+
+  const UpdateMutation = useMutation<
+    House,
+    PostgrestError,
+    { houseId: House["id"]; updated_house: Partial<House> }
+  >({
+    mutationFn: updateHouse,
+    onMutate: () => setLoading(true),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["houses"] });
+      setLoading(false);
+    },
+    onError: (error) => {
+      setError(error);
+      setLoading(false);
+    },
+  });
+
+  const RemoveMutation = useMutation<boolean, PostgrestError, House["id"]>({
+    mutationFn: removeHouse,
+    onMutate: () => setLoading(true),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["houses"] });
+      setLoading(false);
+    },
+    onError: (error) => {
+      setError(error);
+      setLoading(false);
+    },
+  });
+
   async function AddHouse(new_house: House) {
-    resetStates();
+    const { data, mutateAsync, isSuccess } = AddMutation;
 
-    const { error: InsertError } = await supabaseClient
-      .from("houses")
-      .insert(new_house)
-      .single();
+    await mutateAsync(new_house);
 
-    if (InsertError) {
-      SetError(InsertError);
-      return false;
-    }
-
-    setLoading(false);
-    return true;
+    return isSuccess ? data : null;
   }
 
   async function UpdateHouse(
     updated_house: Partial<House>,
     houseId: House["id"],
   ) {
-    resetStates();
+    const { data, mutateAsync, isSuccess } = UpdateMutation;
 
-    const { error: UpdateError } = await supabaseClient
-      .from("houses")
-      .update(updated_house)
-      .eq("id", houseId);
+    await mutateAsync({ updated_house, houseId });
 
-    if (UpdateError) {
-      SetError(UpdateError);
-      return false;
-    }
-
-    setLoading(false);
-    return true;
+    return isSuccess ? data : null;
   }
 
-  /**
-   * Removes a house from the database.
-   * @param houseId - The id of the house to be removed from the database.
-   * @returns A promise resolving to a boolean.
-   */
   async function RemoveHouse(houseId: House["id"]) {
-    resetStates();
+    const { mutateAsync, isSuccess } = RemoveMutation;
 
-    const { error: DeleteError } = await supabaseClient
-      .from("houses")
-      .delete()
-      .eq("id", houseId);
+    await mutateAsync(houseId);
 
-    if (DeleteError) {
-      SetError(DeleteError);
-      return false;
-    }
-
-    setLoading(false);
-    return true;
+    return isSuccess;
   }
 
   /**
@@ -166,9 +124,9 @@ export function useHouses() {
    */
   function getDates(): DateReturn {
     // Extracting the timestamps from the houses and filtering out any null or undefined values
-    const timestamps: string[] = Houses.map((house) => house.added_at).filter(
-      (timestamp): timestamp is string => Boolean(timestamp),
-    );
+    const timestamps: string[] = Houses!
+      .map((house) => house.added_at)
+      .filter((timestamp): timestamp is string => Boolean(timestamp));
 
     const { minInputDate, maxInputDate } = GetMinMaxDate(timestamps);
 
@@ -201,7 +159,7 @@ export function useHouses() {
       .lt("added_at", end.toISOString())) as Data<House[]>;
 
     if (FetchError) {
-      SetError(FetchError);
+      setError(FetchError);
       return [];
     }
 
@@ -210,8 +168,8 @@ export function useHouses() {
 
   return {
     Houses,
-    Loading,
-    Error,
+    Loading: isLoading || Loading,
+    Error: FetchError || Error,
     AddHouse,
     UpdateHouse,
     RemoveHouse,

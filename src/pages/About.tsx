@@ -10,6 +10,8 @@ import { useProjects } from "@/hooks/useProjects";
 import { RandomizeSplitArray } from "@/helpers/helpers";
 import { GlobeHeroSection } from "@/components/GlobeHeroSection";
 import StatCard from "@/components/StatCard";
+import ErrorCard from "@/components/ErrorCard";
+import LoadingCard from "@/components/LoadingCard";
 
 const countryInfo: CountryInfo = {
   "United Arab Emirates": { flagCode: "ae", lat: 24.4539, lng: 54.3773 },
@@ -80,8 +82,6 @@ const faqItems: FAQItem[] = [
   },
 ];
 
-
-
 export default function About() {
   useDocumentTitle("About Us");
 
@@ -90,11 +90,10 @@ export default function About() {
   const location = useLocation();
   const globeRef2 = useRef<HTMLDivElement>(null);
 
-  const { Countries } = useCountries();
-  const { Projects } = useProjects();
+  const { Countries, Loading: CountriesLoading } = useCountries();
+  const { Projects, Loading: ProjectsLoading } = useProjects();
 
-  const FeaturedProjects =
-    RandomizeSplitArray(Projects, 3) || Projects.slice(0, 3);
+  const loading = CountriesLoading || ProjectsLoading;
 
   const [countries, setCountries] = useState<CountryDisplay[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<CountryDisplay | null>(
@@ -113,8 +112,6 @@ export default function About() {
 
   useEffect(() => {
     async function fetchCountries() {
-      // const { data } = await supabaseClient.from("countries").select("*");
-      // if (!data) return;
       if (!Countries) return;
       const filteredCountries = Countries.filter((c) => countryInfo[c.name]);
       const mapped: CountryDisplay[] = filteredCountries.map((c) => ({
@@ -135,6 +132,27 @@ export default function About() {
     );
   }, [selectedCountry]);
 
+  if (loading) return <LoadingCard message="Loading data. Please wait..." />
+
+  if (!Countries)
+    return (
+      <ErrorCard
+        message='Failed to fetch countries'
+        error='Unable to retrieve country information.'
+      />
+    );
+
+  if (!Projects)
+    return (
+      <ErrorCard
+        message='Failed to fetch projects'
+        error='Unable to retrieve project information.'
+      />
+    );
+
+  const FeaturedProjects =
+    RandomizeSplitArray(Projects, 3) || Projects.slice(0, 3);
+
   function handleExplore() {
     if (!selectedCountry) return;
     navigate(`/projects?country=${selectedCountry.id}`);
@@ -150,32 +168,32 @@ export default function About() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative overflow-hidden text-white">
+      <section className='relative overflow-hidden text-white'>
         <motion.div
           initial={{ opacity: 0, scale: 1.04 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.55, ease: "easeOut" }}
-          className="absolute inset-0 bg-cover bg-center"
+          className='absolute inset-0 bg-cover bg-center'
           style={{ backgroundImage: "url('/images/about/about-us.png')" }}
         />
-        <div className="absolute inset-0 bg-black/45" />
-        <div className="p-5">
+        <div className='absolute inset-0 bg-black/45' />
+        <div className='p-5'>
           <Breadcrumbs />
         </div>
-        <div className="relative max-w-7xl mx-auto px-6 py-24 md:py-32">
-          <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-6">
+        <div className='relative max-w-7xl mx-auto px-6 py-24 md:py-32'>
+          <h1 className='text-5xl md:text-7xl font-extrabold leading-tight mb-6'>
             Building the
             <br />
-            <span className="text-orange-400">Future</span>
+            <span className='text-orange-400'>Future</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-300 max-w-xl mb-10">
+          <p className='text-lg md:text-xl text-gray-300 max-w-xl mb-10'>
             Premium real estate developments across Egypt, UAE, and the United
             Kingdom. Discover your next home with TAB Developments.
           </p>
-          <div className="flex gap-4">
+          <div className='flex gap-4'>
             <Link
-              to="/projects"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-full font-semibold transition shadow-lg shadow-orange-500/30"
+              to='/projects'
+              className='bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-full font-semibold transition shadow-lg shadow-orange-500/30'
             >
               View Projects
             </Link>
@@ -183,7 +201,7 @@ export default function About() {
               onClick={() =>
                 globeRef2.current?.scrollIntoView({ behavior: "smooth" })
               }
-              className="border border-white/30 hover:border-white text-white px-8 py-3 rounded-full font-semibold transition"
+              className='border border-white/30 hover:border-white text-white px-8 py-3 rounded-full font-semibold transition'
             >
               Explore Globe
             </button>
@@ -191,24 +209,30 @@ export default function About() {
         </div>
       </section>
       {/* Stats */}
-      <section className="py-16 px-6">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <section className='py-16 px-6'>
+        <div className='max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center'>
           {SummaryLabels.map((stat) => {
             const numericValue = parseInt(stat.num.replace("+", ""), 10);
-            return <StatCard key={stat.label} value={numericValue} label={stat.label} />;
+            return (
+              <StatCard
+                key={stat.label}
+                value={numericValue}
+                label={stat.label}
+              />
+            );
           })}
         </div>
       </section>
       {/* Featured Projects */}
-      <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
+      <section className='py-20 px-6'>
+        <div className='max-w-7xl mx-auto'>
+          <h2 className='text-3xl md:text-4xl font-bold text-center mb-4'>
             Featured Projects
           </h2>
-          <p className="text-gray-500 text-center mb-12">
+          <p className='text-gray-500 text-center mb-12'>
             A selection of our finest developments
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
             {FeaturedProjects.map((project) => {
               const country = Countries.find(
                 (country) => country.id === project.country_id,
@@ -218,11 +242,11 @@ export default function About() {
                 <Link
                   key={project.id}
                   to={`/projects/${project.id}`}
-                  className="group rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white"
+                  className='group rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white'
                 >
-                  <div className="h-48 bg-linear-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                  <div className='h-48 bg-linear-to-br from-orange-400 to-orange-600 flex items-center justify-center'>
                     {!project.images[0].url && (
-                      <span className="text-white text-6xl font-bold opacity-20">
+                      <span className='text-white text-6xl font-bold opacity-20'>
                         {project.name[0]}
                       </span>
                     )}
@@ -230,18 +254,18 @@ export default function About() {
                       <img
                         src={project.images[0].url}
                         alt={project.name}
-                        className="size-full object-cover bg-center"
+                        className='size-full object-cover bg-center'
                       />
                     )}
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-2 group-hover:text-orange-500 transition">
+                  <div className='p-6'>
+                    <h3 className='text-xl font-bold mb-2 group-hover:text-orange-500 transition'>
                       {project.name}
                     </h3>
-                    <p className="text-gray-500 text-sm line-clamp-2 mb-3">
+                    <p className='text-gray-500 text-sm line-clamp-2 mb-3'>
                       {project.description}
                     </p>
-                    <div className="flex items-center justify-between text-sm text-gray-400">
+                    <div className='flex items-center justify-between text-sm text-gray-400'>
                       <span>📍 {project.location}</span>
                       <span>{country?.name}</span>
                     </div>
@@ -250,10 +274,10 @@ export default function About() {
               );
             })}
           </div>
-          <div className="text-center mt-12">
+          <div className='text-center mt-12'>
             <Link
-              to="/projects"
-              className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 rounded-full font-semibold transition"
+              to='/projects'
+              className='bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 rounded-full font-semibold transition'
             >
               View All Projects →
             </Link>
@@ -261,22 +285,22 @@ export default function About() {
         </div>
       </section>
       {/* FAQ */}
-      <section className="py-20 px-6 bg-[#e6e0d8]">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+      <section className='py-20 px-6 bg-[#e6e0d8]'>
+        <div className='max-w-4xl mx-auto'>
+          <div className='text-center mb-12'>
+            <h2 className='text-3xl md:text-4xl font-bold text-slate-900'>
               Most Asked Questions
             </h2>
-            <p className="mt-3 text-slate-500 max-w-2xl mx-auto">
+            <p className='mt-3 text-slate-500 max-w-2xl mx-auto'>
               Find quick, clear answers about buying, payments, investment,
               handover, and support.
             </p>
-            <div className="mx-auto mt-5 h-1 w-24 rounded-full bg-orange-500/70" />
+            <div className='mx-auto mt-5 h-1 w-24 rounded-full bg-orange-500/70' />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5'>
             {[0, 1].map((columnIndex) => (
-              <div key={columnIndex} className="space-y-4 md:space-y-5">
+              <div key={columnIndex} className='space-y-4 md:space-y-5'>
                 {faqItems
                   .filter((_, itemIndex) => itemIndex % 2 === columnIndex)
                   .map((item, filteredIndex) => {
@@ -286,19 +310,19 @@ export default function About() {
                     return (
                       <article
                         key={item.question}
-                        className="w-full rounded-2xl border border-slate-200 bg-white shadow-sm"
+                        className='w-full rounded-2xl border border-slate-200 bg-white shadow-sm'
                       >
                         <button
-                          type="button"
+                          type='button'
                           onClick={() =>
                             setOpenFaqIndex((prev) =>
                               prev === index ? null : index,
                             )
                           }
-                          className="flex h-24 w-full items-center justify-between gap-6 px-6 py-5 text-left cursor-pointer"
+                          className='flex h-24 w-full items-center justify-between gap-6 px-6 py-5 text-left cursor-pointer'
                           aria-expanded={isOpen}
                         >
-                          <h3 className="line-clamp-2 text-base md:text-lg font-semibold text-slate-900">
+                          <h3 className='line-clamp-2 text-base md:text-lg font-semibold text-slate-900'>
                             {item.question}
                           </h3>
                           <span
@@ -317,10 +341,10 @@ export default function About() {
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.22, ease: "easeOut" }}
-                              className="overflow-hidden"
+                              className='overflow-hidden'
                             >
-                              <div className="px-6 pb-6 border-t border-slate-100">
-                                <p className="pt-4 text-sm md:text-base leading-7 text-slate-600">
+                              <div className='px-6 pb-6 border-t border-slate-100'>
+                                <p className='pt-4 text-sm md:text-base leading-7 text-slate-600'>
                                   {item.answer}
                                 </p>
                               </div>
@@ -336,7 +360,7 @@ export default function About() {
         </div>
       </section>
       {/* Globe Section */}
-      <div ref={globeRef2} className="w-full">
+      <div ref={globeRef2} className='w-full'>
         <GlobeHeroSection
           globeRef={globeRef}
           countries={countries}

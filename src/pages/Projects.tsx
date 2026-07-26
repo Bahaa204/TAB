@@ -307,7 +307,7 @@ export default function Projects() {
 
   const projects = useMemo(
     () =>
-      AllProjects.filter(
+      AllProjects?.filter(
         (project): project is Project & { id: number } =>
           typeof project.id === "number" &&
           (!selectedCountry || String(project.country_id) === selectedCountry),
@@ -318,7 +318,7 @@ export default function Projects() {
   const projectImagesById = useMemo(() => {
     const map = new Map<number, string[]>();
 
-    projects.forEach((project) => {
+    projects?.forEach((project) => {
       map.set(project.id, getProjectImageUrls(project));
     });
 
@@ -326,14 +326,14 @@ export default function Projects() {
   }, [projects]);
 
   const countryById = useMemo(
-    () => new Map(countries.map((country) => [country.id, country])),
+    () => new Map(countries?.map((country) => [country.id, country])),
     [countries],
   );
 
   const housesByBuildingId = useMemo(() => {
     const map = new Map<number, House[]>();
 
-    Houses.forEach((house) => {
+    Houses?.forEach((house) => {
       if (typeof house.building_id !== "number") return;
       const existing = map.get(house.building_id);
       if (existing) {
@@ -349,7 +349,7 @@ export default function Projects() {
   const buildingsByProjectId = useMemo(() => {
     const map = new Map<number, Building[]>();
 
-    Buildings.forEach((building) => {
+    Buildings?.forEach((building) => {
       if (typeof building.project_id !== "number") return;
       const existing = map.get(building.project_id);
       if (existing) {
@@ -365,7 +365,7 @@ export default function Projects() {
   const projectPriceRanges = useMemo(() => {
     const map = new Map<number, { min: number; max: number }>();
 
-    projects.forEach((project) => {
+    projects?.forEach((project) => {
       const projectBuildings = buildingsByProjectId.get(project.id) ?? [];
       const prices = projectBuildings.flatMap(
         (building) =>
@@ -410,7 +410,7 @@ export default function Projects() {
   }, [allVisiblePrices]);
 
   const recommendationCandidates = useMemo(() => {
-    return AllProjects.flatMap((project) => {
+    return AllProjects?.flatMap((project) => {
       if (typeof project.id !== "number") return [];
       const projectBuildings = buildingsByProjectId.get(project.id) ?? [];
 
@@ -439,7 +439,7 @@ export default function Projects() {
     setForm((prev) => ({
       ...prev,
       budgetRange: "any",
-      countryId: selectedCountry  || "",
+      countryId: selectedCountry || "",
       floorPreference: "any",
       priority: "City living",
       bedrooms: "",
@@ -451,17 +451,20 @@ export default function Projects() {
     setShowSurvey(false);
   }
 
+  if (!countries || !projects || !Buildings || !Houses)
+    return <ErrorCard message='Failed go load the data required.' error='' />;
+
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const strictMatches = recommendationCandidates.filter((candidate) =>
+    const strictMatches = recommendationCandidates?.filter((candidate) =>
       matchesAllFilters(candidate, {
         ...form,
         countryId: form.countryId || activeCountryId,
       }),
     );
 
-    if (strictMatches.length === 0) {
+    if (strictMatches?.length === 0) {
       setRecommendation(null);
       setRecommendationText(
         "Not found. No project matches your selected filters.",
@@ -469,7 +472,7 @@ export default function Projects() {
       return;
     }
 
-    const best = strictMatches.reduce<Recommendation | null>(
+    const best = strictMatches?.reduce<Recommendation | null>(
       (bestSoFar, candidate) => {
         if (!bestSoFar) return candidate;
         return scoreCandidate(candidate, form) > scoreCandidate(bestSoFar, form)
@@ -508,51 +511,51 @@ export default function Projects() {
   }
 
   return (
-    <div className="bg-[#e6e0d8]">
-      <div className="relative overflow-hidden text-white py-24 md:py-32 px-6">
+    <div className='bg-[#e6e0d8]'>
+      <div className='relative overflow-hidden text-white py-24 md:py-32 px-6'>
         <motion.div
           initial={{ opacity: 0, scale: 1.04 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.55, ease: "easeOut" }}
-          className="absolute inset-0 bg-cover bg-center"
+          className='absolute inset-0 bg-cover bg-center'
           style={{
             backgroundImage: "url('/images/projects/projects.jpg')",
           }}
         />
-        <div className="absolute inset-0 bg-black/45" />
-        <Breadcrumbs style="light" />
-        <div className="relative max-w-5xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
+        <div className='absolute inset-0 bg-black/45' />
+        <Breadcrumbs style='light' />
+        <div className='relative max-w-5xl mx-auto text-center'>
+          <h1 className='text-4xl md:text-5xl font-extrabold mb-4'>
             Our Projects
           </h1>
-          <p className="text-gray-300 text-lg max-w-xl mx-auto">
+          <p className='text-gray-300 text-lg max-w-xl mx-auto'>
             Explore our developments across the globe and get a quick
             personalized recommendation.
           </p>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 mt-8 md:mt-10">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
-          <div className="rounded-3xl bg-white p-5 shadow-lg">
-            <h2 className="text-xl font-semibold text-slate-900">
+      <div className='max-w-6xl mx-auto px-6 mt-8 md:mt-10'>
+        <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8'>
+          <div className='rounded-3xl bg-white p-5 shadow-lg'>
+            <h2 className='text-xl font-semibold text-slate-900'>
               Need a recommendation?
             </h2>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className='mt-2 text-sm text-slate-500'>
               Open the survey and get the best building match based on budget,
               country, floor preference and priorities.
             </p>
           </div>
           <button
-            type="button"
+            type='button'
             onClick={openSurvey}
-            className="inline-flex items-center justify-center rounded-3xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition cursor-pointer"
+            className='inline-flex items-center justify-center rounded-3xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition cursor-pointer'
           >
             Open recommendation survey
           </button>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-4 flex flex-wrap justify-center gap-3 mb-10">
+        <div className='bg-white rounded-2xl shadow-lg p-4 flex flex-wrap justify-center gap-3 mb-10'>
           <button
             onClick={() => handleFilter(null)}
             className={`px-6 py-2.5 rounded-full text-sm font-semibold transition cursor-pointer ${
@@ -576,7 +579,7 @@ export default function Projects() {
               <img
                 src={`https://flagcdn.com/w40/${countryFlags[c.name] || "xx"}.png`}
                 alt={c.name}
-                className="w-5 h-4 object-cover rounded-sm"
+                className='w-5 h-4 object-cover rounded-sm'
               />
               {c.name}
             </button>
@@ -585,49 +588,49 @@ export default function Projects() {
 
         {error && (
           <ErrorCard
-            message="We could not load the projects. Please try again later."
-            error={error}
+            message='We could not load the projects. Please try again later.'
+            error={error.message}
           />
         )}
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-20'>
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="bg-white rounded-2xl overflow-hidden shadow-md animate-pulse"
+                className='bg-white rounded-2xl overflow-hidden shadow-md animate-pulse'
               >
                 {/* Image placeholder */}
-                <div className="h-48 bg-gray-200" />
-                <div className="p-6">
+                <div className='h-48 bg-gray-200' />
+                <div className='p-6'>
                   {/* Country flag + name */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-4 w-5 bg-gray-200 rounded" />
-                    <div className="h-3 w-20 bg-gray-100 rounded" />
+                  <div className='flex items-center gap-2 mb-3'>
+                    <div className='h-4 w-5 bg-gray-200 rounded' />
+                    <div className='h-3 w-20 bg-gray-100 rounded' />
                   </div>
                   {/* Title */}
-                  <div className="h-5 w-3/4 bg-gray-200 rounded mb-3" />
+                  <div className='h-5 w-3/4 bg-gray-200 rounded mb-3' />
                   {/* Description lines */}
-                  <div className="space-y-2 mb-4">
-                    <div className="h-3 w-full bg-gray-100 rounded" />
-                    <div className="h-3 w-5/6 bg-gray-100 rounded" />
+                  <div className='space-y-2 mb-4'>
+                    <div className='h-3 w-full bg-gray-100 rounded' />
+                    <div className='h-3 w-5/6 bg-gray-100 rounded' />
                   </div>
                   {/* Meta */}
-                  <div className="h-3 w-1/2 bg-gray-100 rounded mb-1" />
-                  <div className="h-3 w-2/3 bg-gray-100 rounded mb-4" />
+                  <div className='h-3 w-1/2 bg-gray-100 rounded mb-1' />
+                  <div className='h-3 w-2/3 bg-gray-100 rounded mb-4' />
                   {/* Footer */}
-                  <div className="flex justify-between">
-                    <div className="h-3 w-24 bg-gray-100 rounded" />
-                    <div className="h-3 w-28 bg-gray-100 rounded" />
+                  <div className='flex justify-between'>
+                    <div className='h-3 w-24 bg-gray-100 rounded' />
+                    <div className='h-3 w-28 bg-gray-100 rounded' />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : projects.length === 0 ? (
-          <p className="text-center text-gray-400 py-20">No projects found.</p>
+          <p className='text-center text-gray-400 py-20'>No projects found.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-20'>
             {projects.map((project, i) => {
               const projectImages = projectImagesById.get(project.id) ?? [];
 
@@ -635,7 +638,7 @@ export default function Projects() {
                 <Link
                   to={`/projects/${project.id}`}
                   key={project.id}
-                  className="group relative text-left bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                  className='group relative text-left bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1'
                   onClick={async () =>
                     await UpdateProject(
                       { nb_visits: (project.nb_visits || 0) + 1 },
@@ -644,9 +647,9 @@ export default function Projects() {
                   }
                 >
                   <button
-                    type="button"
+                    type='button'
                     onClick={(event) => handleFavoriteClick(event, project.id)}
-                    className="absolute right-3 top-3 z-30 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#0f2f4f] shadow-md transition hover:bg-orange-50 cursor-pointer"
+                    className='absolute right-3 top-3 z-30 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#0f2f4f] shadow-md transition hover:bg-orange-50 cursor-pointer'
                     aria-label={
                       IsFavorited(project.id)
                         ? "Remove from favorites"
@@ -664,48 +667,48 @@ export default function Projects() {
                     <div
                       className={`h-48 bg-linear-to-br ${cardGradients[i % cardGradients.length]} flex items-center justify-center relative`}
                     >
-                      <span className="text-white/20 text-8xl font-black">
+                      <span className='text-white/20 text-8xl font-black'>
                         {project.name[0]}
                       </span>
                     </div>
                   )}
 
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div className='p-6'>
+                    <div className='flex items-center gap-2 mb-2'>
                       {countryById.get(project.country_id) &&
                         countryFlags[
                           countryById.get(project.country_id)?.name || ""
                         ] && (
                           <img
                             src={`https://flagcdn.com/w40/${countryFlags[countryById.get(project.country_id)?.name || ""]}.png`}
-                            alt=""
-                            className="w-5 h-4 object-cover rounded-sm"
+                            alt=''
+                            className='w-5 h-4 object-cover rounded-sm'
                           />
                         )}
-                      <span className="text-xs text-gray-400">
+                      <span className='text-xs text-gray-400'>
                         {countryById.get(project.country_id)?.name || "Unknown"}
                       </span>
                     </div>
-                    <h2 className="text-lg font-bold mb-2 group-hover:text-orange-500 transition">
+                    <h2 className='text-lg font-bold mb-2 group-hover:text-orange-500 transition'>
                       {project.name}
                     </h2>
-                    <p className="text-gray-500 text-sm line-clamp-2 mb-4">
+                    <p className='text-gray-500 text-sm line-clamp-2 mb-4'>
                       {project.description}
                     </p>
-                    <div className="mb-4 space-y-1 text-xs text-[#24507f]">
+                    <div className='mb-4 space-y-1 text-xs text-[#24507f]'>
                       <p>
                         Handover:{" "}
                         {project.handover_date
                           ? new Date(project.handover_date).toLocaleDateString()
                           : "To be announced"}
                       </p>
-                      <p className="line-clamp-2">
+                      <p className='line-clamp-2'>
                         ROI Insight:{" "}
                         {project.expected_roi_note ||
                           "Steady rental demand with long-term growth potential."}
                       </p>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-gray-400">
+                    <div className='flex items-center justify-between text-sm text-gray-400'>
                       <span>📍 {project.location}</span>
                       <span>
                         {getPriceRange(project.id).min > 0
@@ -723,41 +726,41 @@ export default function Projects() {
 
       {showSurvey && (
         <Card
-          className="fixed inset-0 z-9000 overflow-y-auto flex items-start justify-center bg-black/50 p-4 sm:items-center no-scrollbar overflow-hidden"
+          className='fixed inset-0 z-9000 overflow-y-auto flex items-start justify-center bg-black/50 p-4 sm:items-center no-scrollbar overflow-hidden'
           onMouseDown={closeSurvey}
         >
           <Card
-            className="w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-[2rem] bg-white shadow-2xl p-0! no-scrollbar"
+            className='w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-[2rem] bg-white shadow-2xl p-0! no-scrollbar'
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <CardHeader className="flex items-center justify-between bg-orange-500 px-6 py-5 text-white rounded-t-[2rem]">
+            <CardHeader className='flex items-center justify-between bg-orange-500 px-6 py-5 text-white rounded-t-[2rem]'>
               <div>
-                <CardTitle className="text-2xl font-bold">
+                <CardTitle className='text-2xl font-bold'>
                   Find your perfect building
                 </CardTitle>
-                <CardDescription className="text-sm text-orange-100 mt-1">
+                <CardDescription className='text-sm text-orange-100 mt-1'>
                   Answer a few quick questions and we'll recommend the best
                   building from our current projects.
                 </CardDescription>
               </div>
               <CardAction>
                 <button
-                  type="button"
+                  type='button'
                   onClick={closeSurvey}
-                  className="rounded-full border border-white/30 bg-white/10 hover:bg-white/20 transition p-2 cursor-pointer"
+                  className='rounded-full border border-white/30 bg-white/10 hover:bg-white/20 transition p-2 cursor-pointer'
                 >
-                  <X className="w-4 h-4" />
+                  <X className='w-4 h-4' />
                 </button>
               </CardAction>
             </CardHeader>
 
-            <CardContent className="grid grid-cols-1 gap-6 p-7 lg:grid-cols-[1.6fr_1fr]">
-              <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ring-0!">
-                <CardHeader className="mb-6 rounded-2xl border border-orange-100 bg-orange-50 p-5">
-                  <CardTitle className="text-sm text-gray-500 mb-2">
+            <CardContent className='grid grid-cols-1 gap-6 p-7 lg:grid-cols-[1.6fr_1fr]'>
+              <Card className='rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ring-0!'>
+                <CardHeader className='mb-6 rounded-2xl border border-orange-100 bg-orange-50 p-5'>
+                  <CardTitle className='text-sm text-gray-500 mb-2'>
                     Available price range
                   </CardTitle>
-                  <CardDescription className="text-2xl font-semibold text-slate-900">
+                  <CardDescription className='text-2xl font-semibold text-slate-900'>
                     {overallPrices.min
                       ? `$${overallPrices.min.toLocaleString()}`
                       : "N/A"}{" "}
@@ -766,14 +769,14 @@ export default function Projects() {
                       ? `$${overallPrices.max.toLocaleString()}`
                       : "N/A"}
                   </CardDescription>
-                  <CardFooter className="text-sm text-gray-500 mt-3 bg-transparent border-t-0! p-0!">
+                  <CardFooter className='text-sm text-gray-500 mt-3 bg-transparent border-t-0! p-0!'>
                     This survey uses existing prices from our projects database.
                   </CardFooter>
                 </CardHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className='space-y-5'>
                   <Field>
-                    <Label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Label className='block text-sm font-semibold text-slate-700 mb-2'>
                       What price is in mind?
                     </Label>
                     <Select
@@ -782,23 +785,23 @@ export default function Projects() {
                         setForm({ ...form, budgetRange: value })
                       }
                     >
-                      <SelectTrigger className="w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm shadow-sm cursor-pointer">
-                        <SelectValue placeholder="Select Your Budget" />
+                      <SelectTrigger className='w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm shadow-sm cursor-pointer'>
+                        <SelectValue placeholder='Select Your Budget' />
                       </SelectTrigger>
-                      <SelectContent className="z-9001">
+                      <SelectContent className='z-9001'>
                         <SelectGroup>
                           <SelectLabel>Select Your Budget</SelectLabel>
-                          <SelectItem value="any">Any budget</SelectItem>
-                          <SelectItem value="low">Up to 200K</SelectItem>
-                          <SelectItem value="mid">200K - 800K</SelectItem>
-                          <SelectItem value="high">800K+</SelectItem>
+                          <SelectItem value='any'>Any budget</SelectItem>
+                          <SelectItem value='low'>Up to 200K</SelectItem>
+                          <SelectItem value='mid'>200K - 800K</SelectItem>
+                          <SelectItem value='high'>800K+</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
                   </Field>
 
                   <Field>
-                    <Label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Label className='block text-sm font-semibold text-slate-700 mb-2'>
                       Which country do you prefer?
                     </Label>
                     <Select
@@ -807,10 +810,10 @@ export default function Projects() {
                         setForm({ ...form, countryId: value })
                       }
                     >
-                      <SelectTrigger className="w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm shadow-sm cursor-pointer">
-                        <SelectValue placeholder="Select Your Country" />
+                      <SelectTrigger className='w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm shadow-sm cursor-pointer'>
+                        <SelectValue placeholder='Select Your Country' />
                       </SelectTrigger>
-                      <SelectContent className="z-9001">
+                      <SelectContent className='z-9001'>
                         <SelectGroup>
                           <SelectLabel>Select Your Country</SelectLabel>
                           {countries.map((country) => (
@@ -827,7 +830,7 @@ export default function Projects() {
                   </Field>
 
                   <Field>
-                    <Label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Label className='block text-sm font-semibold text-slate-700 mb-2'>
                       Do you prefer a high floor or a low floor?
                     </Label>
                     <Select
@@ -836,22 +839,22 @@ export default function Projects() {
                         setForm({ ...form, floorPreference: value })
                       }
                     >
-                      <SelectTrigger className="w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm shadow-sm cursor-pointer">
-                        <SelectValue placeholder="No preference" />
+                      <SelectTrigger className='w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm shadow-sm cursor-pointer'>
+                        <SelectValue placeholder='No preference' />
                       </SelectTrigger>
-                      <SelectContent className="z-9001">
+                      <SelectContent className='z-9001'>
                         <SelectGroup>
                           <SelectLabel>Floor preference</SelectLabel>
-                          <SelectItem value="any">No preference</SelectItem>
-                          <SelectItem value="high">High floor</SelectItem>
-                          <SelectItem value="low">Low floor</SelectItem>
+                          <SelectItem value='any'>No preference</SelectItem>
+                          <SelectItem value='high'>High floor</SelectItem>
+                          <SelectItem value='low'>Low floor</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
                   </Field>
 
                   <Field>
-                    <Label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Label className='block text-sm font-semibold text-slate-700 mb-2'>
                       What matters most?
                     </Label>
                     <Select
@@ -860,23 +863,23 @@ export default function Projects() {
                         setForm({ ...form, priority: value })
                       }
                     >
-                      <SelectTrigger className="w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm shadow-sm cursor-pointer">
-                        <SelectValue placeholder="What Matters Most?" />
+                      <SelectTrigger className='w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm shadow-sm cursor-pointer'>
+                        <SelectValue placeholder='What Matters Most?' />
                       </SelectTrigger>
-                      <SelectContent className="z-9001">
+                      <SelectContent className='z-9001'>
                         <SelectGroup>
                           <SelectLabel>What Matters Most?</SelectLabel>
-                          <SelectItem value="City living">
+                          <SelectItem value='City living'>
                             City living
                           </SelectItem>
-                          <SelectItem value="Beachfront">Beachfront</SelectItem>
-                          <SelectItem value="Family">
+                          <SelectItem value='Beachfront'>Beachfront</SelectItem>
+                          <SelectItem value='Family'>
                             Family friendly
                           </SelectItem>
-                          <SelectItem value="Luxury">
+                          <SelectItem value='Luxury'>
                             Luxury experience
                           </SelectItem>
-                          <SelectItem value="Investment">
+                          <SelectItem value='Investment'>
                             Investment potential
                           </SelectItem>
                         </SelectGroup>
@@ -885,7 +888,7 @@ export default function Projects() {
                   </Field>
 
                   <Field>
-                    <Label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Label className='block text-sm font-semibold text-slate-700 mb-2'>
                       How many bedrooms do you prefer?
                     </Label>
                     <Select
@@ -894,16 +897,16 @@ export default function Projects() {
                         setForm({ ...form, bedrooms: value })
                       }
                     >
-                      <SelectTrigger className="w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm shadow-sm cursor-pointer">
-                        <SelectValue placeholder="No preference" />
+                      <SelectTrigger className='w-full rounded-lg border border-slate-200 bg-white p-3.5 text-sm shadow-sm cursor-pointer'>
+                        <SelectValue placeholder='No preference' />
                       </SelectTrigger>
-                      <SelectContent className="z-9001">
+                      <SelectContent className='z-9001'>
                         <SelectGroup>
                           <SelectLabel>Preferences</SelectLabel>
-                          <SelectItem value="1">1 bedroom</SelectItem>
-                          <SelectItem value="2">2 bedrooms</SelectItem>
-                          <SelectItem value="3">3 bedrooms</SelectItem>
-                          <SelectItem value="4">4+ bedrooms</SelectItem>
+                          <SelectItem value='1'>1 bedroom</SelectItem>
+                          <SelectItem value='2'>2 bedrooms</SelectItem>
+                          <SelectItem value='3'>3 bedrooms</SelectItem>
+                          <SelectItem value='4'>4+ bedrooms</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -911,9 +914,9 @@ export default function Projects() {
 
                   <Field>
                     <Button
-                      type="submit"
-                      variant="secondary"
-                      className="w-full rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white hover:bg-orange-600 transition cursor-pointer"
+                      type='submit'
+                      variant='secondary'
+                      className='w-full rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white hover:bg-orange-600 transition cursor-pointer'
                     >
                       Get recommendation
                     </Button>
@@ -921,19 +924,19 @@ export default function Projects() {
                 </form>
               </Card>
 
-              <Card className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm">
-                <CardHeader className="mb-6">
-                  <CardTitle className="text-xl font-semibold">
+              <Card className='rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 shadow-sm'>
+                <CardHeader className='mb-6'>
+                  <CardTitle className='text-xl font-semibold'>
                     Your current preferences
                   </CardTitle>
-                  <CardDescription className="text-slate-600 mt-2">
+                  <CardDescription className='text-slate-600 mt-2'>
                     Country:
                     {activeCountryId
                       ? countries.find(
                           (item) => String(item.id) === activeCountryId,
                         )?.name
                       : "Any"}
-                    <p className="text-slate-600 mt-1">
+                    <p className='text-slate-600 mt-1'>
                       Floor preference:
                       {form.floorPreference === "high"
                         ? "High floor"
@@ -944,59 +947,59 @@ export default function Projects() {
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
-                  <Card className="rounded-xl border border-slate-200 bg-white p-4">
-                    <CardHeader className="text-sm uppercase tracking-[0.2em] text-slate-400 p-0!">
+                <CardContent className='space-y-4'>
+                  <Card className='rounded-xl border border-slate-200 bg-white p-4'>
+                    <CardHeader className='text-sm uppercase tracking-[0.2em] text-slate-400 p-0!'>
                       <CardTitle>Budget range</CardTitle>
-                      <CardDescription className="mt-2 text-base font-semibold text-slate-900">
+                      <CardDescription className='mt-2 text-base font-semibold text-slate-900'>
                         {form.budgetRange}
                       </CardDescription>
                     </CardHeader>
                   </Card>
-                  <Card className="rounded-xl border border-slate-200 bg-white p-4">
-                    <CardHeader className="text-sm uppercase tracking-[0.2em] text-slate-400 p-0!">
+                  <Card className='rounded-xl border border-slate-200 bg-white p-4'>
+                    <CardHeader className='text-sm uppercase tracking-[0.2em] text-slate-400 p-0!'>
                       <CardTitle>Preference</CardTitle>
-                      <CardDescription className="mt-2 text-base font-semibold text-slate-900">
+                      <CardDescription className='mt-2 text-base font-semibold text-slate-900'>
                         {form.priority}
                       </CardDescription>
                     </CardHeader>
                   </Card>
                 </CardContent>
 
-                <Card className="mt-8 rounded-2xl border border-orange-100 bg-white p-5 text-slate-900 shadow-sm">
-                  <CardHeader className="text-sm uppercase tracking-[0.2em] text-orange-500">
+                <Card className='mt-8 rounded-2xl border border-orange-100 bg-white p-5 text-slate-900 shadow-sm'>
+                  <CardHeader className='text-sm uppercase tracking-[0.2em] text-orange-500'>
                     <CardTitle>Recommendation</CardTitle>
                   </CardHeader>
-                  <CardDescription className="text-sm! text-slate-600!">
+                  <CardDescription className='text-sm! text-slate-600!'>
                     {recommendationText}
                   </CardDescription>
                   <CardContent>
                     {recommendation && (
-                      <Card className="mt-5 rounded-2xl border border-orange-100 bg-orange-50 p-4 text-slate-900">
-                        <CardHeader className="text-sm uppercase tracking-[0.2em] text-orange-500">
+                      <Card className='mt-5 rounded-2xl border border-orange-100 bg-orange-50 p-4 text-slate-900'>
+                        <CardHeader className='text-sm uppercase tracking-[0.2em] text-orange-500'>
                           <CardTitle>Best building</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <Card className="p-3 bg-transparent ring-0! ">
-                            <CardHeader className="mt-2 text-xl font-bold">
+                          <Card className='p-3 bg-transparent ring-0! '>
+                            <CardHeader className='mt-2 text-xl font-bold'>
                               {recommendation.building.name}
                             </CardHeader>
                             <CardContent>
-                              <p className="mt-2 text-sm text-slate-700">
+                              <p className='mt-2 text-sm text-slate-700'>
                                 Project: {recommendation.project.name}
                               </p>
-                              <p className="mt-1 text-sm text-slate-700">
+                              <p className='mt-1 text-sm text-slate-700'>
                                 Price: $
                                 {recommendation.house.price.toLocaleString()}
                               </p>
-                              <p className="mt-1 text-sm text-slate-700">
+                              <p className='mt-1 text-sm text-slate-700'>
                                 Bedrooms:{" "}
                                 {recommendation.house.nb_bedrooms ?? "N/A"}
                               </p>
                               <Link
                                 to={`/projects/${recommendation.project.id}`}
                                 onClick={closeSurvey}
-                                className="inline-flex mt-4 items-center rounded-2xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition"
+                                className='inline-flex mt-4 items-center rounded-2xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition'
                               >
                                 View project details
                               </Link>
